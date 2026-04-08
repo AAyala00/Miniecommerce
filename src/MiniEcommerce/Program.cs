@@ -112,8 +112,7 @@ namespace MiniEcommerce // definimos un namespace para no dejar las clases en to
     {
         private readonly ProductCatalog _catalog = ProductCatalog.CreateDefault();
         private readonly ShoppingCart _cart = new();
-        private readonly List<Order> _orders = [];
-        private int _nextOrderId = 1;
+        private readonly OrderService _orderService = new();
 
         public void ShowProducts()
         {
@@ -187,43 +186,11 @@ namespace MiniEcommerce // definimos un namespace para no dejar las clases en to
                 return;
             }
 
-            // --- Cálculo de subtotal ---
-            decimal subtotal = _cart.Subtotal;
-
             // --- Cálculo de descuento (lógica hardcodeada, Ya no) ---
             if (!DiscountCalculator.IsValidCode(discountCode))
                 Console.WriteLine("WARN: Código de descuento inválido, se ignora.");
 
-            decimal discount = DiscountCalculator.Calculate(subtotal, discountCode);
-
-            // --- Cálculo de impuesto (hardcodeado, Ya no) ---
-            decimal tax = TaxCalculator.Calculate(_cart.Items);
-
-            decimal total = subtotal - discount + tax;
-
-            // --- Crear la orden ---
-            var order = new Order
-            {
-                Id = _nextOrderId++,
-                Items = _cart.GetItemsSnapshot(),
-                Total = total,
-                Discount = discount,
-                Tax = tax,
-                Status = "Confirmed",
-                CustomerEmail = customerEmail,
-                CustomerName = customerName,
-                CreatedAt = DateTime.Now,
-                DiscountCode = discountCode
-            };
-
-            // --- Actualizar stock ---
-            foreach (var item in _cart.Items)
-            {
-                item.Product.Stock -= item.Quantity;
-            }
-
-            _orders.Add(order);
-            _cart.Clear();
+            var order = _orderService.CreateOrder(_cart, customerName, customerEmail, discountCode);
 
             // --- Imprimir recibo ---
             Console.WriteLine("\n=== ORDEN CONFIRMADA ===");
@@ -233,11 +200,11 @@ namespace MiniEcommerce // definimos un namespace para no dejar las clases en to
             {
                 Console.WriteLine($"  {item.Quantity}x {item.Product.Name} - ${item.Product.Price * item.Quantity:F2}");
             }
-            Console.WriteLine($"  Subtotal: ${subtotal:F2}");
-            if (discount > 0)
-                Console.WriteLine($"  Descuento ({discountCode}): -${discount:F2}");
-            Console.WriteLine($"  IVA (16%): ${tax:F2}");
-            Console.WriteLine($"  TOTAL: ${total:F2}");
+            Console.WriteLine($"  Subtotal: ${order.Total - order.Tax + order.Discount:F2}");
+            if (order.Discount > 0)
+                Console.WriteLine($"  Descuento ({discountCode}): -${order.Discount:F2}");
+            Console.WriteLine($"  IVA (16%): ${order.Tax:F2}");
+            Console.WriteLine($"  TOTAL: ${order.Total:F2}");
 
             // --- Enviar notificación (simulada) ---
             NotificationService.SendOrderConfirmation(order);
@@ -245,14 +212,14 @@ namespace MiniEcommerce // definimos un namespace para no dejar las clases en to
 
         public void ShowOrders()
         {
-            if (_orders.Count == 0)
+            if (_orderService.IsEmpty)
             {
                 Console.WriteLine("\nNo hay órdenes registradas.");
                 return;
             }
 
             Console.WriteLine("\n=== ÓRDENES ===");
-            foreach (var o in _orders)
+            foreach (var o in _orderService.Orders)
             {
                 Console.WriteLine($"  Orden #{o.Id} - {o.Status} - ${o.Total:F2} - {o.CustomerName} - {o.CreatedAt:g}");
             }
@@ -260,31 +227,17 @@ namespace MiniEcommerce // definimos un namespace para no dejar las clases en to
 
         public void CancelOrder(int orderId)
         {
-            var order = _orders.FirstOrDefault(o => o.Id == orderId);
+            var order = _orderService.FindById(orderId);
             if (order == null)
             {
                 Console.WriteLine("ERROR: Orden no encontrada.");
                 return;
             }
-            if (order.Status == "Cancelled")
+            if (!OrderService.CancelOrder(order))
             {
-                Console.WriteLine("ERROR: La orden ya está cancelada.");
+                Console.WriteLine($"ERROR: No se puede cancelar una orden con estado '{order.Status}'.");
                 return;
             }
-            if (order.Status == "Shipped")
-            {
-                Console.WriteLine("ERROR: No se puede cancelar una orden enviada.");
-                return;
-            }
-
-            order.Status = "Cancelled";
-
-            // Restaurar stock
-            foreach (var item in order.Items)
-            {
-                item.Product.Stock += item.Quantity;
-            }
-
             Console.WriteLine($"OK: Orden #{orderId} cancelada.");
             NotificationService.SendOrderCancellation(order);
         }
