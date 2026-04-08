@@ -1,5 +1,3 @@
-using MiniEcommerce;
-
 namespace MiniEcommerce.Tests;
 
 public class DiscountCalculatorTests

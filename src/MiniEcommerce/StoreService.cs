@@ -6,6 +6,11 @@ public class StoreService
     private readonly ShoppingCart _cart = new();
     private readonly OrderService _orderService = new();
     private readonly DiscountCalculator _discountCalculator = DiscountCalculator.CreateDefault();
+    private readonly List<IOrdernotifier> _notifiers =
+    [
+        new EmailNotifier(),
+        new LogNotifier()
+    ];
 
     public void ShowProducts()
     {
@@ -100,7 +105,8 @@ public class StoreService
         Console.WriteLine($"  TOTAL: ${order.Total:F2}");
 
         // --- Enviar notificación (simulada) ---
-        NotificationService.SendOrderConfirmation(order);
+        foreach (var notifier in _notifiers)
+            notifier.OnOrderCreated(order);
     }
 
     public void ShowOrders()
@@ -131,7 +137,8 @@ public class StoreService
             Console.WriteLine($"ERROR: No se puede cancelar una orden con estado '{order.Status}'.");
             return;
         }
-        Console.WriteLine($"OK: Orden #{orderId} cancelada.");
-        NotificationService.SendOrderCancellation(order);
+
+        foreach (var notifier in _notifiers)
+            notifier.OnOrderCancelled(order);
     }
 }
