@@ -5,6 +5,7 @@ public class StoreService
     private readonly ProductCatalog _catalog = ProductCatalog.CreateDefault();
     private readonly ShoppingCart _cart = new();
     private readonly OrderService _orderService = new();
+    private readonly DiscountCalculator _discountCalculator = DiscountCalculator.CreateDefault();
 
     public void ShowProducts()
     {
@@ -79,7 +80,7 @@ public class StoreService
         }
 
         // --- Cálculo de descuento (lógica hardcodeada, Ya no) ---
-        if (!DiscountCalculator.IsValidCode(discountCode))
+        if (!_discountCalculator.IsValidCode(discountCode))
             Console.WriteLine("WARN: Código de descuento inválido, se ignora.");
 
         var order = _orderService.CreateOrder(_cart, customerName, customerEmail, discountCode);

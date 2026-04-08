@@ -2,6 +2,7 @@ namespace MiniEcommerce;
 
 public class OrderService
 {
+    private readonly DiscountCalculator _discountCalculator = DiscountCalculator.CreateDefault();
     private readonly List<Order> _orders = [];
     private int _nextOrderId = 1;
 
@@ -14,7 +15,7 @@ public class OrderService
     public Order CreateOrder(ShoppingCart cart, string customerName, string customerEmail, string? discountCode)
     {
         decimal subtotal = cart.Subtotal;
-        decimal discount = DiscountCalculator.Calculate(subtotal, discountCode);
+        decimal discount = _discountCalculator.Calculate(subtotal, discountCode);
         decimal tax = TaxCalculator.Calculate(cart.Items);
         decimal total = subtotal - discount + tax;
 

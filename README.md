@@ -37,14 +37,15 @@ tests/MiniEcommerce.Tests/
 
 Se partió de una God Class (`StoreService`) con 7 responsabilidades y se refactorizó progresivamente:
 
-| Commit                                         | Qué se hizo                                   |
-| ---------------------------------------------- | --------------------------------------------- |
-| `feat: versión naive`                          | Todo en Program.cs — una sola clase hace todo |
-| `refactor: DiscountCalculator y TaxCalculator` | Extraer cálculos de negocio                   |
-| `refactor: NotificationService`                | Extraer envío de notificaciones               |
-| `refactor: ShoppingCart`                       | Extraer gestión del carrito                   |
-| `refactor: ProductCatalog`                     | Extraer catálogo de productos                 |
-| `refactor: OrderService`                       | Extraer creación/cancelación de órdenes       |
-| `refactor: modelos a archivos propios`         | Separar clases de Program.cs                  |
+| Commit                                         | Qué se hizo                                           |
+| ---------------------------------------------- | ----------------------------------------------------- |
+| `feat: versión naive`                          | Todo en Program.cs — una sola clase hace todo         |
+| `refactor: DiscountCalculator y TaxCalculator` | Extraer cálculos de negocio                           |
+| `refactor: NotificationService`                | Extraer envío de notificaciones                       |
+| `refactor: ShoppingCart`                       | Extraer gestión del carrito                           |
+| `refactor: ProductCatalog`                     | Extraer catálogo de productos                         |
+| `refactor: OrderService`                       | Extraer creación/cancelación de órdenes               |
+| `refactor: modelos a archivos propios`         | Separar clases de Program.cs                          |
+| `refactor: OCP + Strategy en descuentos`       | Descuentos extensibles sin modificar código existente |
 
 **Resultado:** `StoreService` pasó de God Class a coordinador — solo conecta servicios y maneja la salida a consola. Cada clase tiene una sola razón para cambiar.

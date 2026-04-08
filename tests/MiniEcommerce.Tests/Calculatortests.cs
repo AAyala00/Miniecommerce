@@ -4,47 +4,51 @@ namespace MiniEcommerce.Tests;
 
 public class DiscountCalculatorTests
 {
+    private readonly DiscountCalculator _sut = DiscountCalculator.CreateDefault();
+
     [Fact]
     public void Calculate_WithWelcome10_Returns10Percent()
     {
-        var result = DiscountCalculator.Calculate(100m, "WELCOME10");
-
-        Assert.Equal(10m, result);
+        Assert.Equal(10m, _sut.Calculate(100m, "WELCOME10"));
     }
 
     [Fact]
     public void Calculate_WithFlat50_CapsAtSubtotal()
     {
-        var result = DiscountCalculator.Calculate(30m, "FLAT50");
-
-        Assert.Equal(30m, result); // no puede descontar más que el subtotal
+        Assert.Equal(30m, _sut.Calculate(30m, "FLAT50")); // no puede descontar más que el subtotal
     }
 
     [Fact]
     public void Calculate_WithNullCode_ReturnsZero()
     {
-        var result = DiscountCalculator.Calculate(100m, null);
-
-        Assert.Equal(0m, result);
+        Assert.Equal(0m, _sut.Calculate(100m, null));
     }
 
     [Fact]
     public void Calculate_WithInvalidCode_ReturnsZero()
     {
-        var result = DiscountCalculator.Calculate(100m, "FAKE");
-
-        Assert.Equal(0m, result);
+        Assert.Equal(0m, _sut.Calculate(100m, "FAKE"));
     }
 
     [Theory]
     [InlineData("WELCOME10", true)]
     [InlineData("SAVE20", true)]
     [InlineData("FLAT50", true)]
+    [InlineData("BUY2GET1", true)]
     [InlineData("FAKE", false)]
     [InlineData(null, true)]
     public void IsValidCode_ReturnsExpected(string? code, bool expected)
     {
-        Assert.Equal(expected, DiscountCalculator.IsValidCode(code));
+        Assert.Equal(expected, _sut.IsValidCode(code));
+    }
+
+    [Fact]
+    public void Register_NewStrategy_CanBeUsed()
+    {
+        var calculator = new DiscountCalculator();
+        calculator.Register(new PercentageDiscount("VIP50", 0.50m));
+
+        Assert.Equal(50m, calculator.Calculate(100m, "VIP50"));
     }
 }
 
