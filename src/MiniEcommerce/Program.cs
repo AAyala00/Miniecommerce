@@ -269,8 +269,7 @@ namespace MiniEcommerce // definimos un namespace para no dejar las clases en to
             Console.WriteLine($"  TOTAL: ${total:F2}");
 
             // --- Enviar notificación (simulada) ---
-            Console.WriteLine($"\n  [EMAIL] Enviando confirmación a {customerEmail}...");
-            Console.WriteLine($"  [LOG] Orden #{order.Id} creada por ${total:F2}");
+            NotificationService.SendOrderConfirmation(order);
         }
 
         public void ShowOrders()
@@ -316,7 +315,7 @@ namespace MiniEcommerce // definimos un namespace para no dejar las clases en to
             }
 
             Console.WriteLine($"OK: Orden #{orderId} cancelada.");
-            Console.WriteLine($"  [EMAIL] Enviando notificación de cancelación a {order.CustomerEmail}...");
+            NotificationService.SendOrderCancellation(order);
         }
     }
 }
