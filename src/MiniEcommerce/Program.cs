@@ -7,7 +7,13 @@
 // --- Entry Point ---
 using MiniEcommerce;
 
-var store = new StoreService();
+var catalog = ProductCatalog.CreateDefault();
+var cart = new ShoppingCart();
+var discountCalculator = DiscountCalculator.CreateDefault();
+var orderService = new OrderService(discountCalculator);
+IOrdernotifier[] notifiers = [new EmailNotifier(), new LogNotifier()];
+
+var store = new StoreService(catalog, cart, orderService, discountCalculator, notifiers);
 
 Console.WriteLine("=== MINI E-COMMERCE ===");
 Console.WriteLine("Comandos: productos | agregar | carrito | quitar | checkout | ordenes | cancelar | salir");

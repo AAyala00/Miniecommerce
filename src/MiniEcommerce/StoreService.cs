@@ -1,21 +1,16 @@
 namespace MiniEcommerce;
 
-public class StoreService
+public class StoreService(
+    ProductCatalog catalog,
+    ShoppingCart cart,
+    OrderService orderService,
+    DiscountCalculator discountCalculator,
+    IEnumerable<IOrdernotifier> notifiers)
 {
-    private readonly ProductCatalog _catalog = ProductCatalog.CreateDefault();
-    private readonly ShoppingCart _cart = new();
-    private readonly OrderService _orderService = new();
-    private readonly DiscountCalculator _discountCalculator = DiscountCalculator.CreateDefault();
-    private readonly List<IOrdernotifier> _notifiers =
-    [
-        new EmailNotifier(),
-        new LogNotifier()
-    ];
-
     public void ShowProducts()
     {
         Console.WriteLine("\n=== PRODUCTOS DISPONIBLES ===");
-        foreach (var p in _catalog.Products)
+        foreach (var p in catalog.Products)
         {
             Console.WriteLine($"  [{p.Id}] {p.Name} - ${p.Price:F2} ({p.Category}) - Stock: {p.Stock}");
         }
@@ -23,7 +18,7 @@ public class StoreService
 
     public void AddToCart(int productId, int quantity)
     {
-        var product = _catalog.FindById(productId);
+        var product = catalog.FindById(productId);
         if (product == null)
         {
             Console.WriteLine("ERROR: Producto no encontrado.");
@@ -35,30 +30,30 @@ public class StoreService
             return;
         }
 
-        _cart.Add(product, quantity);
+        cart.Add(product, quantity);
         Console.WriteLine($"OK: {quantity}x {product.Name} agregado al carrito.");
     }
 
     public void ShowCart()
     {
-        if (_cart.IsEmpty)
+        if (cart.IsEmpty)
         {
             Console.WriteLine("\nEl carrito está vacío.");
             return;
         }
 
         Console.WriteLine("\n=== CARRITO ===");
-        foreach (var item in _cart.Items)
+        foreach (var item in cart.Items)
         {
             var lineTotal = item.Product.Price * item.Quantity;
             Console.WriteLine($"  {item.Quantity}x {item.Product.Name} - ${lineTotal:F2}");
         }
-        Console.WriteLine($"  SUBTOTAL: ${_cart.Subtotal:F2}");
+        Console.WriteLine($"  SUBTOTAL: ${cart.Subtotal:F2}");
     }
 
     public void RemoveFromCart(int productId)
     {
-        if (!_cart.Remove(productId))
+        if (!cart.Remove(productId))
             Console.WriteLine("ERROR: Producto no está en el carrito.");
         else
             Console.WriteLine("OK: Producto eliminado del carrito.");
@@ -66,7 +61,7 @@ public class StoreService
 
     public void Checkout(string customerName, string customerEmail, string? discountCode = null)
     {
-        if (_cart.IsEmpty)
+        if (cart.IsEmpty)
         {
             Console.WriteLine("ERROR: El carrito está vacío.");
             return;
@@ -85,10 +80,10 @@ public class StoreService
         }
 
         // --- Cálculo de descuento (lógica hardcodeada, Ya no) ---
-        if (!_discountCalculator.IsValidCode(discountCode))
+        if (!discountCalculator.IsValidCode(discountCode))
             Console.WriteLine("WARN: Código de descuento inválido, se ignora.");
 
-        var order = _orderService.CreateOrder(_cart, customerName, customerEmail, discountCode);
+        var order = orderService.CreateOrder(cart, customerName, customerEmail, discountCode);
 
         // --- Imprimir recibo ---
         Console.WriteLine("\n=== ORDEN CONFIRMADA ===");
@@ -105,20 +100,20 @@ public class StoreService
         Console.WriteLine($"  TOTAL: ${order.Total:F2}");
 
         // --- Enviar notificación (simulada) ---
-        foreach (var notifier in _notifiers)
+        foreach (var notifier in notifiers)
             notifier.OnOrderCreated(order);
     }
 
     public void ShowOrders()
     {
-        if (_orderService.IsEmpty)
+        if (orderService.IsEmpty)
         {
             Console.WriteLine("\nNo hay órdenes registradas.");
             return;
         }
 
         Console.WriteLine("\n=== ÓRDENES ===");
-        foreach (var o in _orderService.Orders)
+        foreach (var o in orderService.Orders)
         {
             Console.WriteLine($"  Orden #{o.Id} - {o.Status} - ${o.Total:F2} - {o.CustomerName} - {o.CreatedAt:g}");
         }
@@ -126,7 +121,7 @@ public class StoreService
 
     public void CancelOrder(int orderId)
     {
-        var order = _orderService.FindById(orderId);
+        var order = orderService.FindById(orderId);
         if (order == null)
         {
             Console.WriteLine("ERROR: Orden no encontrada.");
@@ -138,7 +133,7 @@ public class StoreService
             return;
         }
 
-        foreach (var notifier in _notifiers)
+        foreach (var notifier in notifiers)
             notifier.OnOrderCancelled(order);
     }
 }

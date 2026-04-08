@@ -12,11 +12,11 @@ Aplicación de consola que simula un e-commerce básico. El objetivo no es el pr
 
 ```
 src/MiniEcommerce/
-├── Program.cs              # CLI loop (entrada/salida)
+├── Program.cs              # Composition Root + CLI loop
 ├── Product.cs              # Modelo
 ├── CartItem.cs             # Modelo
 ├── Order.cs                # Modelo
-├── StoreService.cs         # Coordinador (delega a los servicios)
+├── StoreService.cs         # Coordinador (recibe dependencias por constructor)
 ├── ShoppingCart.cs          # Gestión del carrito
 ├── ProductCatalog.cs        # Almacén y búsqueda de productos
 ├── OrderService.cs          # Creación y cancelación de órdenes
@@ -36,7 +36,9 @@ tests/MiniEcommerce.Tests/
 
 ## Progreso
 
-### SRP (Single Responsibility Principle)
+### SOLID
+
+#### SRP (Single Responsibility Principle)
 
 Se partió de una God Class (`StoreService`) con 7 responsabilidades y se refactorizó progresivamente:
 
@@ -50,18 +52,32 @@ Se partió de una God Class (`StoreService`) con 7 responsabilidades y se refact
 | `refactor: OrderService`                       | Extraer creación/cancelación de órdenes       |
 | `refactor: modelos a archivos propios`         | Separar clases de Program.cs                  |
 
-### OCP (Open/Closed Principle) + Strategy Pattern
+**Resultado:** `StoreService` pasó de God Class a coordinador — solo conecta servicios y maneja la salida a consola.
+
+#### OCP (Open/Closed Principle) + Strategy Pattern
 
 | Commit                                   | Qué se hizo                                                                                                              |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `refactor: OCP + Strategy en descuentos` | Descuentos extensibles sin modificar código existente. Interfaz `IDiscountStrategy` con implementaciones intercambiables |
 
-### LSP (Liskov Substitution Principle)
+**Resultado:** Agregar un nuevo tipo de descuento = crear una clase nueva y registrarla. No se toca código existente.
+
+#### LSP (Liskov Substitution Principle)
 
 Concepto cubierto: prefiere interfaces sobre herencia. Las implementaciones de `IDiscountStrategy` y `IOrderNotifier` son sustituibles sin romper el comportamiento esperado.
 
-### ISP (Interface Segregation Principle)
+#### ISP (Interface Segregation Principle)
 
 | Commit                            | Qué se hizo                                                                                                                      |
 | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `refactor: ISP en notificaciones` | Interfaz `IOrderNotifier` cohesiva en vez de una interfaz gorda. Implementaciones independientes: `EmailNotifier`, `LogNotifier` |
+
+**Resultado:** Cada notifier hace una sola cosa. Agregar un canal nuevo (SMS, Push) = nueva clase que implementa `IOrderNotifier`.
+
+#### DIP (Dependency Inversion Principle)
+
+| Commit                                             | Qué se hizo                                                                                                    |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `refactor: DIP - inyección de dependencias manual` | `StoreService` y `OrderService` reciben dependencias por constructor. `Program.cs` actúa como Composition Root |
+
+**Resultado:** Las clases de alto nivel dependen de abstracciones, no de implementaciones concretas. Las dependencias se ensamblan en un solo lugar (`Program.cs`).
