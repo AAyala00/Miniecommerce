@@ -111,7 +111,7 @@ namespace MiniEcommerce // definimos un namespace para no dejar las clases en to
     public class StoreService
     {
         private readonly List<Product> _products = [];
-        private readonly List<CartItem> _cart = [];
+        private readonly ShoppingCart _cart = new();
         private readonly List<Order> _orders = [];
         private int _nextOrderId = 1;
 
@@ -148,53 +148,38 @@ namespace MiniEcommerce // definimos un namespace para no dejar las clases en to
                 return;
             }
 
-            var existing = _cart.FirstOrDefault(c => c.Product.Id == productId);
-            if (existing != null)
-            {
-                existing.Quantity += quantity;
-            }
-            else
-            {
-                _cart.Add(new CartItem { Product = product, Quantity = quantity });
-            }
-
+            _cart.Add(product, quantity);
             Console.WriteLine($"OK: {quantity}x {product.Name} agregado al carrito.");
         }
 
         public void ShowCart()
         {
-            if (_cart.Count == 0)
+            if (_cart.IsEmpty)
             {
                 Console.WriteLine("\nEl carrito está vacío.");
                 return;
             }
 
             Console.WriteLine("\n=== CARRITO ===");
-            decimal subtotal = 0;
-            foreach (var item in _cart)
+            foreach (var item in _cart.Items)
             {
                 var lineTotal = item.Product.Price * item.Quantity;
-                subtotal += lineTotal;
                 Console.WriteLine($"  {item.Quantity}x {item.Product.Name} - ${lineTotal:F2}");
             }
-            Console.WriteLine($"  SUBTOTAL: ${subtotal:F2}");
+            Console.WriteLine($"  SUBTOTAL: ${_cart.Subtotal:F2}");
         }
 
         public void RemoveFromCart(int productId)
         {
-            var item = _cart.FirstOrDefault(c => c.Product.Id == productId);
-            if (item == null)
-            {
+            if (!_cart.Remove(productId))
                 Console.WriteLine("ERROR: Producto no está en el carrito.");
-                return;
-            }
-            _cart.Remove(item);
-            Console.WriteLine($"OK: {item.Product.Name} eliminado del carrito.");
+            else
+                Console.WriteLine("OK: Producto eliminado del carrito.");
         }
 
         public void Checkout(string customerName, string customerEmail, string? discountCode = null)
         {
-            if (_cart.Count == 0)
+            if (_cart.IsEmpty)
             {
                 Console.WriteLine("ERROR: El carrito está vacío.");
                 return;
@@ -213,11 +198,7 @@ namespace MiniEcommerce // definimos un namespace para no dejar las clases en to
             }
 
             // --- Cálculo de subtotal ---
-            decimal subtotal = 0;
-            foreach (var item in _cart)
-            {
-                subtotal += item.Product.Price * item.Quantity;
-            }
+            decimal subtotal = _cart.Subtotal;
 
             // --- Cálculo de descuento (lógica hardcodeada, Ya no) ---
             if (!DiscountCalculator.IsValidCode(discountCode))
@@ -226,7 +207,7 @@ namespace MiniEcommerce // definimos un namespace para no dejar las clases en to
             decimal discount = DiscountCalculator.Calculate(subtotal, discountCode);
 
             // --- Cálculo de impuesto (hardcodeado, Ya no) ---
-            decimal tax = TaxCalculator.Calculate(_cart);
+            decimal tax = TaxCalculator.Calculate(_cart.Items);
 
             decimal total = subtotal - discount + tax;
 
@@ -234,7 +215,7 @@ namespace MiniEcommerce // definimos un namespace para no dejar las clases en to
             var order = new Order
             {
                 Id = _nextOrderId++,
-                Items = new List<CartItem>(_cart),
+                Items = _cart.GetItemsSnapshot(),
                 Total = total,
                 Discount = discount,
                 Tax = tax,
@@ -246,7 +227,7 @@ namespace MiniEcommerce // definimos un namespace para no dejar las clases en to
             };
 
             // --- Actualizar stock ---
-            foreach (var item in _cart)
+            foreach (var item in _cart.Items)
             {
                 item.Product.Stock -= item.Quantity;
             }
