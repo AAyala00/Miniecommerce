@@ -110,25 +110,15 @@ namespace MiniEcommerce // definimos un namespace para no dejar las clases en to
 
     public class StoreService
     {
-        private readonly List<Product> _products = [];
+        private readonly ProductCatalog _catalog = ProductCatalog.CreateDefault();
         private readonly ShoppingCart _cart = new();
         private readonly List<Order> _orders = [];
         private int _nextOrderId = 1;
 
-        public StoreService()
-        {
-            // Seed de productos hardcodeado
-            _products.Add(new Product { Id = 1, Name = "Laptop", Price = 999.99m, Category = "Electronics", Stock = 10 });
-            _products.Add(new Product { Id = 2, Name = "Mouse", Price = 29.99m, Category = "Electronics", Stock = 50 });
-            _products.Add(new Product { Id = 3, Name = "T-Shirt", Price = 19.99m, Category = "Clothing", Stock = 100 });
-            _products.Add(new Product { Id = 4, Name = "Jeans", Price = 49.99m, Category = "Clothing", Stock = 30 });
-            _products.Add(new Product { Id = 5, Name = "Coffee Beans", Price = 14.99m, Category = "Food", Stock = 200 });
-        }
-
         public void ShowProducts()
         {
             Console.WriteLine("\n=== PRODUCTOS DISPONIBLES ===");
-            foreach (var p in _products)
+            foreach (var p in _catalog.Products)
             {
                 Console.WriteLine($"  [{p.Id}] {p.Name} - ${p.Price:F2} ({p.Category}) - Stock: {p.Stock}");
             }
@@ -136,7 +126,7 @@ namespace MiniEcommerce // definimos un namespace para no dejar las clases en to
 
         public void AddToCart(int productId, int quantity)
         {
-            var product = _products.FirstOrDefault(p => p.Id == productId);
+            var product = _catalog.FindById(productId);
             if (product == null)
             {
                 Console.WriteLine("ERROR: Producto no encontrado.");
