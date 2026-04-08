@@ -16,21 +16,14 @@ public class OrderService(DiscountCalculator discountCalculator)
         decimal subtotal = cart.Subtotal;
         decimal discount = discountCalculator.Calculate(subtotal, discountCode);
         decimal tax = TaxCalculator.Calculate(cart.Items);
-        decimal total = subtotal - discount + tax;
 
-        var order = new Order
-        {
-            Id = _nextOrderId++,
-            Items = cart.GetItemsSnapshot(),
-            Total = total,
-            Discount = discount,
-            Tax = tax,
-            Status = "Confirmed",
-            CustomerEmail = customerEmail,
-            CustomerName = customerName,
-            CreatedAt = DateTime.Now,
-            DiscountCode = discountCode
-        };
+        var order = new OrderBuilder()
+            .WithId(_nextOrderId++)
+            .WithItems(cart.GetItemsSnapshot())
+            .WithCustomer(customerName, customerEmail)
+            .WithDiscount(discount, discountCode)
+            .WithTax(tax)
+            .Build();
 
         // Actualizar stock
         foreach (var item in cart.Items)
