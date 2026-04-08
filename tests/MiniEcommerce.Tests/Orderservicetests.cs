@@ -4,7 +4,7 @@ namespace MiniEcommerce.Tests;
 
 public class OrderServiceTests
 {
-    private readonly OrderService _sut = new();
+    private readonly OrderService _sut = new(DiscountCalculator.CreateDefault());
 
     private static ShoppingCart CreateCartWithProduct(decimal price = 100m, string category = "Electronics", int quantity = 1, int stock = 10)
     {

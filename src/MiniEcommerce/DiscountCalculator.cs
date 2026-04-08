@@ -28,11 +28,22 @@ public class DiscountCalculator
 
     public static DiscountCalculator CreateDefault()
     {
+        // Simula descuentos que podrían venir de config/DB
+        var discountDefinitions = new Dictionary<string, string>
+        {
+            ["WELCOME10"] = "percentage:0.10",
+            ["SAVE20"] = "percentage:0.20",
+            ["FLAT50"] = "flat:50",
+            ["BUY2GET1"] = "BuyXGetY:2",
+        };
+
         var calculator = new DiscountCalculator();
-        calculator.Register(new PercentageDiscount("WELCOME10", 0.10m));
-        calculator.Register(new PercentageDiscount("SAVE20", 0.20m));
-        calculator.Register(new FlatDiscount("FLAT50", 50m));
-        calculator.Register(new BuyXGetYDiscount("BUY2GET1", 2));
+
+        foreach (var (code, definition) in discountDefinitions)
+        {
+            calculator.Register(DiscountFactory.Create(code, definition));
+        }
+
         return calculator;
     }
 }
